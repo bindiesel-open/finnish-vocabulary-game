@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiitäjät Sanapeli - Extended</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap');
+        body { font-family: 'Noto Sans', sans-serif; background-color: #f0fdf4; }
+        .card-bounce { animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .shake { animation: shake 0.5s; }
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .progress-bar-transition { transition: width 1s linear; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // MASSIVE VOCABULARY DATABASE (Abridged for logic display, but includes full list in actual play)
+        // ... (Using the full list provided previously) ...
+         const vocabularyDatabase = [
+            // =====================
+            // LEVEL A1-A2 (Basic)
+            // =====================
+            // Identity & Forms
+            { fi: "Etunimi", en: "First name", level: "A1-A2" },
+            { fi: "Sukunimi", en: "Surname", level: "A1-A2" },
+            { fi: "Osoite", en: "Address", level: "A1-A2" },
+            { fi: "Postinumero", en: "Postal code", level: "A1-A2" },
+            { fi: "Kaupunki", en: "City", level: "A1-A2" },
+            { fi: "Maa", en: "Country", level: "A1-A2" },
+            { fi: "Puhelinnumero", en: "Phone number", level: "A1-A2" },
+            { fi: "Sähköposti", en: "Email", level: "A1-A2" },
+            { fi: "Syntymäaika", en: "Date of birth", level: "A1-A2" },
+            { fi: "Ikä", en: "Age", level: "A1-A2" },
+            { fi: "Sukupuoli", en: "Gender", level: "A1-A2" },
+            { fi: "Mies", en: "Man", level: "A1-A2" },
+            { fi: "Nainen", en: "Woman", level: "A1-A2" },
+            { fi: "Kansalaisuus", en: "Nationality", level: "A1-A2" },
+            { fi: "Äidinkieli", en: "Mother tongue", level: "A1-A2" },
+            { fi: "Allekirjoitus", en: "Signature", level: "A1-A2" },
+            { fi: "Salasana", en: "Password", level: "A1-A2" },
+            { fi: "Käyttäjätunnus", en: "Username", level: "A1-A2" },
+            { fi: "Kirjautua", en: "To log in", level: "A1-A2" },
+            { fi: "Rekisteröityä", en: "To register", level: "A1-A2" },
+            // Relationships
+            { fi: "Sinkku", en: "Single", level: "A1-A2" },
+            { fi: "Naimisissa", en: "Married", level: "A1-A2" },
+            { fi: "Eronnut", en: "Divorced", level: "A1-A2" },
+            { fi: "Leski", en: "Widow/Widower", level: "A1-A2" },
+            { fi: "Avopari", en: "Cohabiting couple", level: "A1-A2" },
+            { fi: "Poikaystävä", en: "Boyfriend", level: "A1-A2" },
+            { fi: "Tyttöystävä", en: "Girlfriend", level: "A1-A2" },
+            { fi: "Ystävä", en: "Friend", level: "A1-A2" },
+            { fi: "Kaveri", en: "Buddy/Mate", level: "A1-A2" },
+            // Family
+            { fi: "Perhe", en: "Family", level: "A1-A2" },
+            { fi: "Äiti", en: "Mother", level: "A1-A2" },
+            { fi: "Isä", en: "Father", level: "A1-A2" },
+            { fi: "Veli", en: "Brother", level: "A1-A2" },
+            { fi: "Sisko", en: "Sister", level: "A1-A2" },
+            { fi: "Isovanhemmat", en: "Grandparents", level: "A1-A2" },
+            { fi: "Mummo", en: "Grandma", level: "A1-A2" },
+            { fi: "Pappa", en: "Grandpa", level: "A1-A2" },
+            { fi: "Tytär", en: "Daughter", level: "A1-A2" },
+            { fi: "Poika", en: "Son/Boy", level: "A1-A2" },
+            { fi: "Lapsi", en: "Child", level: "A1-A2" },
+            { fi: "Vauva", en: "Baby", level: "A1-A2" },
+            { fi: "Setä", en: "Uncle (paternal)", level: "A1-A2" },
+            { fi: "Täti", en: "Aunt", level: "A1-A2" },
+            { fi: "Serkku", en: "Cousin", level: "A1-A2" },
+            // Appearance & Body
+            { fi: "Pituus", en: "Height", level: "A1-A2" },
+            { fi: "Paino", en: "Weight", level: "A1-A2" },
+            { fi: "Hoikka", en: "Slim", level: "A1-A2" },
+            { fi: "Tukeva", en: "Sturdy/Plump", level: "A1-A2" },
+            { fi: "Pitkä", en: "Tall/Long", level: "A1-A2" },
+            { fi: "Lyhyt", en: "Short", level: "A1-A2" },
+            { fi: "Vaalea", en: "Light/Blonde", level: "A1-A2" },
+            { fi: "Tumma", en: "Dark", level: "A1-A2" },
+            { fi: "Silmät", en: "Eyes", level: "A1-A2" },
+            { fi: "Hiukset", en: "Hair", level: "A1-A2" },
+            { fi: "Kaunis", en: "Beautiful", level: "A1-A2" },
+            { fi: "Komea", en: "Handsome", level: "A1-A2" },
+            { fi: "Söpö", en: "Cute", level: "A1-A2" },
+            // Daily Routines & Verbs
+            { fi: "Herätä", en: "To wake up", level: "A1-A2" },
+            { fi: "Nousta", en: "To get up", level: "A1-A2" },
+            { fi: "Pestä", en: "To wash", level: "A1-A2" },
+            { fi: "Syödä", en: "To eat", level: "A1-A2" },
+            { fi: "Juoda", en: "To drink", level: "A1-A2" },
+            { fi: "Mennä", en: "To go", level: "A1-A2" },
+            { fi: "Tulla", en: "To come", level: "A1-A2" },
+            { fi: "Olla", en: "To be", level: "A1-A2" },
+            { fi: "Asua", en: "To live (reside)", level: "A1-A2" },
+            { fi: "Puhua", en: "To speak", level: "A1-A2" },
+            { fi: "Lukea", en: "To read", level: "A1-A2" },
+            { fi: "Kirjoittaa", en: "To write", level: "A1-A2" },
+            { fi: "Kuunnella", en: "To listen", level: "A1-A2" },
+            { fi: "Katsoa", en: "To watch/look", level: "A1-A2" },
+            { fi: "Opiskella", en: "To study", level: "A1-A2" },
+            { fi: "Nukkua", en: "To sleep", level: "A1-A2" },
+            { fi: "Siivota", en: "To clean", level: "A1-A2" },
+            { fi: "Laittaa ruokaa", en: "To cook", level: "A1-A2" },
+            { fi: "Ostaa", en: "To buy", level: "A1-A2" },
+            { fi: "Maksaa", en: "To pay", level: "A1-A2" },
+            { fi: "Työskennellä", en: "To work", level: "A1-A2" },
+            { fi: "Ajaa", en: "To drive", level: "A1-A2" },
+            { fi: "Matkustaa", en: "To travel", level: "A1-A2" },
+            // Hobbies (Basic)
+            { fi: "Harrastaa", en: "To have a hobby", level: "A1-A2" },
+            { fi: "Uinti", en: "Swimming", level: "A1-A2" },
+            { fi: "Jalkapallo", en: "Football", level: "A1-A2" },
+            { fi: "Lenkkeily", en: "Jogging", level: "A1-A2" },
+            { fi: "Kävely", en: "Walking", level: "A1-A2" },
+            { fi: "Tanssi", en: "Dance", level: "A1-A2" },
+            { fi: "Musiikki", en: "Music", level: "A1-A2" },
+            { fi: "Elokuva", en: "Movie", level: "A1-A2" },
+            { fi: "Kirja", en: "Book", level: "A1-A2" },
+            { fi: "Peli", en: "Game", level: "A1-A2" },
+            { fi: "Kuntosali", en: "Gym", level: "A1-A2" },
+            { fi: "Pyöräily", en: "Cycling", level: "A1-A2" },
+            { fi: "Hiihto", en: "Skiing", level: "A1-A2" },
+            // Time
+            { fi: "Aamu", en: "Morning", level: "A1-A2" },
+            { fi: "Päivä", en: "Day", level: "A1-A2" },
+            { fi: "Ilta", en: "Evening", level: "A1-A2" },
+            { fi: "Yö", en: "Night", level: "A1-A2" },
+            { fi: "Tänään", en: "Today", level: "A1-A2" },
+            { fi: "Huomenna", en: "Tomorrow", level: "A1-A2" },
+            { fi: "Eilen", en: "Yesterday", level: "A1-A2" },
+            { fi: "Viikko", en: "Week", level: "A1-A2" },
+            { fi: "Kuukausi", en: "Month", level: "A1-A2" },
+            { fi: "Vuosi", en: "Year", level: "A1-A2" },
+            { fi: "Maanantai", en: "Monday", level: "A1-A2" },
+            { fi: "Tiistai", en: "Tuesday", level: "A1-A2" },
+            { fi: "Keskiviikko", en: "Wednesday", level: "A1-A2" },
+            { fi: "Torstai", en: "Thursday", level: "A1-A2" },
+            { fi: "Perjantai", en: "Friday", level: "A1-A2" },
+            { fi: "Lauantai", en: "Saturday", level: "A1-A2" },
+            { fi: "Sunnuntai", en: "Sunday", level: "A1-A2" },
+            { fi: "Talvi", en: "Winter", level: "A1-A2" },
+            { fi: "Kevät", en: "Spring", level: "A1-A2" },
+            { fi: "Kesä", en: "Summer", level: "A1-A2" },
+            { fi: "Syksy", en: "Autumn", level: "A1-A2" },
+            // Colors
+            { fi: "Väri", en: "Color", level: "A1-A2" },
+            { fi: "Punainen", en: "Red", level: "A1-A2" },
+            { fi: "Sininen", en: "Blue", level: "A1-A2" },
+            { fi: "Vihreä", en: "Green", level: "A1-A2" },
+            { fi: "Keltainen", en: "Yellow", level: "A1-A2" },
+            { fi: "Musta", en: "Black", level: "A1-A2" },
+            { fi: "Valkoinen", en: "White", level: "A1-A2" },
+            { fi: "Harmaa", en: "Grey", level: "A1-A2" },
+            { fi: "Ruskea", en: "Brown", level: "A1-A2" },
+            { fi: "Oranssi", en: "Orange", level: "A1-A2" },
+            { fi: "Violetti", en: "Purple", level: "A1-A2" },
+            // Basic Adjectives
+            { fi: "Hyvä", en: "Good", level: "A1-A2" },
+            { fi: "Huono", en: "Bad", level: "A1-A2" },
+            { fi: "Iso", en: "Big", level: "A1-A2" },
+            { fi: "Pieni", en: "Small", level: "A1-A2" },
+            { fi: "Uusi", en: "New", level: "A1-A2" },
+            { fi: "Vanha", en: "Old", level: "A1-A2" },
+            { fi: "Kallis", en: "Expensive", level: "A1-A2" },
+            { fi: "Halpa", en: "Cheap", level: "A1-A2" },
+            { fi: "Helppo", en: "Easy", level: "A1-A2" },
+            { fi: "Vaikea", en: "Difficult", level: "A1-A2" },
+            { fi: "Kylmä", en: "Cold", level: "A1-A2" },
+            { fi: "Kuuma", en: "Hot", level: "A1-A2" },
+            { fi: "Kiva", en: "Nice", level: "A1-A2" },
+            { fi: "Tylsä", en: "Boring", level: "A1-A2" },
+            { fi: "Tärkeä", en: "Important", level: "A1-A2" },
+            { fi: "Oikein", en: "Correct", level: "A1-A2" },
+            { fi: "Väärin", en: "Wrong", level: "A1-A2" },
+            { fi: "Auki", en: "Open", level: "A1-A2" },
+            { fi: "Kiinni", en: "Closed", level: "A1-A2" },
+            { fi: "Täysi", en: "Full", level: "A1-A2" },
+            { fi: "Tyhjä", en: "Empty", level: "A1-A2" },
+            // Places
+            { fi: "Koti", en: "Home", level: "A1-A2" },
+            { fi: "Koulu", en: "School", level: "A1-A2" },
+            { fi: "Työpaikka", en: "Workplace", level: "A1-A2" },
+            { fi: "Kauppa", en: "Shop", level: "A1-A2" },
+            { fi: "Tori", en: "Market square", level: "A1-A2" },
+            { fi: "Kirjasto", en: "Library", level: "A1-A2" },
+            { fi: "Sairaala", en: "Hospital", level: "A1-A2" },
+            { fi: "Pankki", en: "Bank", level: "A1-A2" },
+            { fi: "Posti", en: "Post office", level: "A1-A2" },
+            { fi: "Ravintola", en: "Restaurant", level: "A1-A2" },
+            { fi: "Kahvila", en: "Cafe", level: "A1-A2" },
+            { fi: "Puisto", en: "Park", level: "A1-A2" },
+            { fi: "Asema", en: "Station", level: "A1-A2" },
+            { fi: "Pysäkki", en: "Stop (bus)", level: "A1-A2" },
+            // Food (Basic)
+            { fi: "Ruoka", en: "Food", level: "A1-A2" },
+            { fi: "Leipä", en: "Bread", level: "A1-A2" },
+            { fi: "Maito", en: "Milk", level: "A1-A2" },
+            { fi: "Vesi", en: "Water", level: "A1-A2" },
+            { fi: "Kahvi", en: "Coffee", level: "A1-A2" },
+            { fi: "Tee", en: "Tea", level: "A1-A2" },
+            { fi: "Liha", en: "Meat", level: "A1-A2" },
+            { fi: "Kala", en: "Fish", level: "A1-A2" },
+            { fi: "Kana", en: "Chicken", level: "A1-A2" },
+            { fi: "Salaatti", en: "Salad", level: "A1-A2" },
+            { fi: "Hedelmä", en: "Fruit", level: "A1-A2" },
+            { fi: "Omena", en: "Apple", level: "A1-A2" },
+            { fi: "Banaani", en: "Banana", level: "A1-A2" },
+            { fi: "Peruna", en: "Potato", level: "A1-A2" },
+            { fi: "Juusto", en: "Cheese", level: "A1-A2" },
+            { fi: "Voi", en: "Butter", level: "A1-A2" },
+            // Household
+            { fi: "Talo", en: "House", level: "A1-A2" },
+            { fi: "Kerrostalo", en: "Apartment building", level: "A1-A2" },
+            { fi: "Huone", en: "Room", level: "A1-A2" },
+            { fi: "Keittiö", en: "Kitchen", level: "A1-A2" },
+            { fi: "Olohuone", en: "Living room", level: "A1-A2" },
+            { fi: "Makuuhuone", en: "Bedroom", level: "A1-A2" },
+            { fi: "Kylpyhuone", en: "Bathroom", level: "A1-A2" },
+            { fi: "Eteinen", en: "Hallway", level: "A1-A2" },
+            { fi: "Ovi", en: "Door", level: "A1-A2" },
+            { fi: "Ikkuna", en: "Window", level: "A1-A2" },
+            { fi: "Pöytä", en: "Table", level: "A1-A2" },
+            { fi: "Tuoli", en: "Chair", level: "A1-A2" },
+            { fi: "Sänky", en: "Bed", level: "A1-A2" },
+            { fi: "Sohva", en: "Sofa", level: "A1-A2" },
+            { fi: "Lamppu", en: "Lamp", level: "A1-A2" },
+            { fi: "Avain", en: "Key", level: "A1-A2" },
+            { fi: "Puhelin", en: "Phone", level: "A1-A2" },
+            { fi: "Tietokone", en: "Computer", level: "A1-A2" },
+            { fi: "Televisio", en: "Television", level: "A1-A2" },
+            { fi: "Kello", en: "Clock", level: "A1-A2" },
+            // Transport
+            { fi: "Auto", en: "Car", level: "A1-A2" },
+            { fi: "Bussi", en: "Bus", level: "A1-A2" },
+            { fi: "Juna", en: "Train", level: "A1-A2" },
+            { fi: "Metro", en: "Subway", level: "A1-A2" },
+            { fi: "Raitiovaunu", en: "Tram", level: "A1-A2" },
+            { fi: "Polkupyörä", en: "Bicycle", level: "A1-A2" },
+            { fi: "Taksi", en: "Taxi", level: "A1-A2" },
+            { fi: "Lentokone", en: "Airplane", level: "A1-A2" },
+            { fi: "Laiva", en: "Ship", level: "A1-A2" },
+            { fi: "Lippu", en: "Ticket", level: "A1-A2" },
+            { fi: "Aikataulu", en: "Timetable", level: "A1-A2" },
+            // Clothes
+            { fi: "Vaate", en: "Garment", level: "A1-A2" },
+            { fi: "Paita", en: "Shirt", level: "A1-A2" },
+            { fi: "Housut", en: "Trousers", level: "A1-A2" },
+            { fi: "Mekko", en: "Dress", level: "A1-A2" },
+            { fi: "Hame", en: "Skirt", level: "A1-A2" },
+            { fi: "Takki", en: "Jacket/Coat", level: "A1-A2" },
+            { fi: "Kengät", en: "Shoes", level: "A1-A2" },
+            { fi: "Sukat", en: "Socks", level: "A1-A2" },
+            { fi: "Pipo", en: "Beanie", level: "A1-A2" },
+            { fi: "Hanskat", en: "Gloves", level: "A1-A2" },
+            { fi: "Huivi", en: "Scarf", level: "A1-A2" },
+            // Nature
+            { fi: "Aurinko", en: "Sun", level: "A1-A2" },
+            { fi: "Kuu", en: "Moon", level: "A1-A2" },
+            { fi: "Tähti", en: "Star", level: "A1-A2" },
+            { fi: "Taivas", en: "Sky", level: "A1-A2" },
+            { fi: "Pilvi", en: "Cloud", level: "A1-A2" },
+            { fi: "Sade", en: "Rain", level: "A1-A2" },
+            { fi: "Lumi", en: "Snow", level: "A1-A2" },
+            { fi: "Tuuli", en: "Wind", level: "A1-A2" },
+            { fi: "Metsä", en: "Forest", level: "A1-A2" },
+            { fi: "Järvi", en: "Lake", level: "A1-A2" },
+            { fi: "Meri", en: "Sea", level: "A1-A2" },
+            { fi: "Joki", en: "River", level: "A1-A2" },
+            { fi: "Puu", en: "Tree", level: "A1-A2" },
+            { fi: "Kukka", en: "Flower", level: "A1-A2" },
+            { fi: "Eläin", en: "Animal", level: "A1-A2" },
+            { fi: "Koira", en: "Dog", level: "A1-A2" },
+            { fi: "Kissa", en: "Cat", level: "A1-A2" },
+            { fi: "Lintu", en: "Bird", level: "A1-A2" },
+            // Conversation
+            { fi: "Moi", en: "Hi", level: "A1-A2" },
+            { fi: "Hei", en: "Hello", level: "A1-A2" },
+            { fi: "Terve", en: "Hello (casual)", level: "A1-A2" },
+            { fi: "Huomenta", en: "Morning!", level: "A1-A2" },
+            { fi: "Kiitos", en: "Thank you", level: "A1-A2" },
+            { fi: "Ole hyvä", en: "You're welcome", level: "A1-A2" },
+            { fi: "Anteeksi", en: "Sorry", level: "A1-A2" },
+            { fi: "Nähdään", en: "See you", level: "A1-A2" },
+            { fi: "Kyllä", en: "Yes", level: "A1-A2" },
+            { fi: "Ei", en: "No", level: "A1-A2" },
+            { fi: "Mitä kuuluu?", en: "How are you?", level: "A1-A2" },
+            { fi: "En ymmärrä", en: "I don't understand", level: "A1-A2" },
+            { fi: "En tiedä", en: "I don't know", level: "A1-A2" },
+            { fi: "Apua", en: "Help", level: "A1-A2" },
+
+            // =====================
+            // LEVEL B1 (Intermediate)
+            // =====================
+            // Feelings & Emotions
+            { fi: "Tunne", en: "Feeling", level: "B1" },
+            { fi: "Rakastua", en: "To fall in love", level: "B1" },
+            { fi: "Ihastua", en: "To have a crush", level: "B1" },
+            { fi: "Vihata", en: "To hate", level: "B1" },
+            { fi: "Pelätä", en: "To fear", level: "B1" },
+            { fi: "Jännittää", en: "To be nervous", level: "B1" },
+            { fi: "Hävetä", en: "To be ashamed", level: "B1" },
+            { fi: "Pettyä", en: "To be disappointed", level: "B1" },
+            { fi: "Innostua", en: "To get excited", level: "B1" },
+            { fi: "Masentua", en: "To get depressed", level: "B1" },
+            { fi: "Ahdistaa", en: "To feel anxious", level: "B1" },
+            { fi: "Surullinen", en: "Sad", level: "B1" },
+            { fi: "Onnellinen", en: "Happy", level: "B1" },
+            { fi: "Vihainen", en: "Angry", level: "B1" },
+            { fi: "Yllättynyt", en: "Surprised", level: "B1" },
+            { fi: "Hermostunut", en: "Nervous/Agitated", level: "B1" },
+            { fi: "Rauhallinen", en: "Calm", level: "B1" },
+            { fi: "Yksinäinen", en: "Lonely", level: "B1" },
+            { fi: "Kateellinen", en: "Jealous", level: "B1" },
+            { fi: "Ujo", en: "Shy", level: "B1" },
+            { fi: "Rohkea", en: "Brave", level: "B1" },
+            { fi: "Rehellinen", en: "Honest", level: "B1" },
+            { fi: "Luotettava", en: "Reliable", level: "B1" },
+            { fi: "Huumorintajuinen", en: "Humorous", level: "B1" },
+            { fi: "Vakava", en: "Serious", level: "B1" },
+            // Teenager & Family Life
+            { fi: "Murrosikä", en: "Puberty/Adolescence", level: "B1" },
+            { fi: "Teini", en: "Teenager", level: "B1" },
+            { fi: "Uhmaikä", en: "Defiant age (toddler)", level: "B1" },
+            { fi: "Kotiintuloaika", en: "Curfew", level: "B1" },
+            { fi: "Sääntö", en: "Rule", level: "B1" },
+            { fi: "Rajoittaa", en: "To limit/restrict", level: "B1" },
+            { fi: "Kieltää", en: "To forbid", level: "B1" },
+            { fi: "Sallia", en: "To allow", level: "B1" },
+            { fi: "Riidellä", en: "To argue", level: "B1" },
+            { fi: "Huutaa", en: "To shout", level: "B1" },
+            { fi: "Kiroilla", en: "To swear", level: "B1" },
+            { fi: "Valvoa", en: "To stay up late", level: "B1" },
+            { fi: "Myöhästyä", en: "To be late", level: "B1" },
+            { fi: "Viikkoraha", en: "Weekly allowance", level: "B1" },
+            { fi: "Kotityöt", en: "Housework", level: "B1" },
+            { fi: "Kasvatus", en: "Upbringing", level: "B1" },
+            { fi: "Kunnioittaa", en: "To respect", level: "B1" },
+            { fi: "Luottaa", en: "To trust", level: "B1" },
+            { fi: "Välittää", en: "To care", level: "B1" },
+            { fi: "Itsenäistyä", en: "To become independent", level: "B1" },
+            { fi: "Muuttaa", en: "To move (house)", level: "B1" },
+            // School & Work
+            { fi: "Todistus", en: "Certificate/Report card", level: "B1" },
+            { fi: "Arvosana", en: "Grade", level: "B1" },
+            { fi: "Koe", en: "Exam/Test", level: "B1" },
+            { fi: "Läksy", en: "Homework", level: "B1" },
+            { fi: "Opiskella", en: "To study", level: "B1" },
+            { fi: "Oppia", en: "To learn", level: "B1" },
+            { fi: "Opettaa", en: "To teach", level: "B1" },
+            { fi: "Hakea", en: "To apply (for a job/school)", level: "B1" },
+            { fi: "Päästä", en: "To get in/access", level: "B1" },
+            { fi: "Valmistua", en: "To graduate", level: "B1" },
+            { fi: "Ammatti", en: "Profession", level: "B1" },
+            { fi: "Työkokemus", en: "Work experience", level: "B1" },
+            { fi: "Haastattelu", en: "Interview", level: "B1" },
+            { fi: "Palkka", en: "Salary", level: "B1" },
+            { fi: "Vero", en: "Tax", level: "B1" },
+            { fi: "Työaika", en: "Working hours", level: "B1" },
+            { fi: "Loma", en: "Holiday", level: "B1" },
+            { fi: "Sairasloma", en: "Sick leave", level: "B1" },
+            { fi: "Pomo", en: "Boss", level: "B1" },
+            { fi: "Kollega", en: "Colleague", level: "B1" },
+            { fi: "Asiakas", en: "Customer", level: "B1" },
+            { fi: "Kokous", en: "Meeting", level: "B1" },
+            { fi: "Projekti", en: "Project", level: "B1" },
+            { fi: "Tiimi", en: "Team", level: "B1" },
+            { fi: "Yrittäjä", en: "Entrepreneur", level: "B1" },
+            { fi: "Työtön", en: "Unemployed", level: "B1" },
+            { fi: "Eläke", en: "Pension", level: "B1" },
+            // Hobbies (Specific & Active)
+            { fi: "Joukkue", en: "Team", level: "B1" },
+            { fi: "Valmentaja", en: "Coach", level: "B1" },
+            { fi: "Harjoitukset", en: "Practice/Training", level: "B1" },
+            { fi: "Kilpailu", en: "Competition", level: "B1" },
+            { fi: "Voitto", en: "Victory", level: "B1" },
+            { fi: "Tappio", en: "Defeat/Loss", level: "B1" },
+            { fi: "Kuntosali", en: "Gym", level: "B1" },
+            { fi: "Jooga", en: "Yoga", level: "B1" },
+            { fi: "Pilates", en: "Pilates", level: "B1" },
+            { fi: "Geokätköily", en: "Geocaching", level: "B1" },
+            { fi: "Kiipeily", en: "Climbing", level: "B1" },
+            { fi: "Ratsastus", en: "Horse riding", level: "B1" },
+            { fi: "Jääkiekko", en: "Ice hockey", level: "B1" },
+            { fi: "Salibandy", en: "Floorball", level: "B1" },
+            { fi: "Soittaa kitaraa", en: "Play guitar", level: "B1" },
+            { fi: "Valokuvaus", en: "Photography", level: "B1" },
+            { fi: "Leipoa", en: "To bake", level: "B1" },
+            { fi: "Käsityöt", en: "Handicrafts", level: "B1" },
+            { fi: "Kalastus", en: "Fishing", level: "B1" },
+            { fi: "Metsästys", en: "Hunting", level: "B1" },
+            { fi: "Retkeily", en: "Hiking/Camping", level: "B1" },
+            { fi: "Penkkiurheilu", en: "Spectator sports", level: "B1" },
+            { fi: "Sohvasurffaus", en: "Couchsurfing", level: "B1" },
+            { fi: "Bloggaus", en: "Blogging", level: "B1" },
+            { fi: "Vapaa-aika", en: "Free time", level: "B1" },
+            // Dating & Relationships (Deeper)
+            { fi: "Treffit", en: "Date", level: "B1" },
+            { fi: "Tavata", en: "To meet", level: "B1" },
+            { fi: "Tutustua", en: "To get to know", level: "B1" },
+            { fi: "Seurustella", en: "To date/be in a relationship", level: "B1" },
+            { fi: "Kumppani", en: "Partner", level: "B1" },
+            { fi: "Puoliso", en: "Spouse", level: "B1" },
+            { fi: "Suhde", en: "Relationship", level: "B1" },
+            { fi: "Ero", en: "Breakup/Divorce", level: "B1" },
+            { fi: "Uusperhe", en: "Blended family", level: "B1" },
+            { fi: "Mustasukkainen", en: "Jealous (romantic)", level: "B1" },
+            { fi: "Uskollinen", en: "Faithful", level: "B1" },
+            { fi: "Pettää", en: "To cheat/betray", level: "B1" },
+            { fi: "Riita", en: "Argument/Fight", level: "B1" },
+            { fi: "Sopia", en: "To make up/agree", level: "B1" },
+            { fi: "Häät", en: "Wedding", level: "B1" },
+            // Health & Well-being
+            { fi: "Terveellinen", en: "Healthy", level: "B1" },
+            { fi: "Epäterveellinen", en: "Unhealthy", level: "B1" },
+            { fi: "Sairaus", en: "Illness", level: "B1" },
+            { fi: "Oire", en: "Symptom", level: "B1" },
+            { fi: "Kuume", en: "Fever", level: "B1" },
+            { fi: "Yskä", en: "Cough", level: "B1" },
+            { fi: "Nuha", en: "Runny nose", level: "B1" },
+            { fi: "Kipu", en: "Pain", level: "B1" },
+            { fi: "Lääkäri", en: "Doctor", level: "B1" },
+            { fi: "Lääke", en: "Medicine", level: "B1" },
+            { fi: "Apteekki", en: "Pharmacy", level: "B1" },
+            { fi: "Levätä", en: "To rest", level: "B1" },
+            { fi: "Kuntoilla", en: "To exercise", level: "B1" },
+            { fi: "Laihtua", en: "To lose weight", level: "B1" },
+            { fi: "Lihota", en: "To gain weight", level: "B1" },
+            { fi: "Stressi", en: "Stress", level: "B1" },
+            { fi: "Väsynyt", en: "Tired", level: "B1" },
+            // Technology & Media
+            { fi: "Tietokone", en: "Computer", level: "B1" },
+            { fi: "Älypuhelin", en: "Smartphone", level: "B1" },
+            { fi: "Sovellus", en: "App", level: "B1" },
+            { fi: "Internet", en: "Internet", level: "B1" },
+            { fi: "Sosiaalinen media", en: "Social media", level: "B1" },
+            { fi: "Ladata", en: "To download/charge", level: "B1" },
+            { fi: "Tiedosto", en: "File", level: "B1" },
+            { fi: "Linkki", en: "Link", level: "B1" },
+            { fi: "Uutinen", en: "News item", level: "B1" },
+            { fi: "Artikkeli", en: "Article", level: "B1" },
+            { fi: "Mainos", en: "Advertisement", level: "B1" },
+            { fi: "Kommentti", en: "Comment", level: "B1" },
+            { fi: "Jakaa", en: "To share", level: "B1" },
+            { fi: "Tykkää", en: "Like", level: "B1" },
+            // Travel & Environment
+            { fi: "Matkalippu", en: "Travel ticket", level: "B1" },
+            { fi: "Varaus", en: "Reservation", level: "B1" },
+            { fi: "Majoitus", en: "Accommodation", level: "B1" },
+            { fi: "Nähtävyys", en: "Sight/Attraction", level: "B1" },
+            { fi: "Opas", en: "Guide", level: "B1" },
+            { fi: "Passi", en: "Passport", level: "B1" },
+            { fi: "Viisumi", en: "Visa", level: "B1" },
+            { fi: "Tulli", en: "Customs", level: "B1" },
+            { fi: "Luonto", en: "Nature", level: "B1" },
+            { fi: "Ympäristö", en: "Environment", level: "B1" },
+            { fi: "Kierrätys", en: "Recycling", level: "B1" },
+            { fi: "Roska", en: "Trash", level: "B1" },
+            { fi: "Säästää", en: "To save", level: "B1" },
+            { fi: "Tuhlata", en: "To waste", level: "B1" },
+            { fi: "Saastuminen", en: "Pollution", level: "B1" },
+            { fi: "Ilmastonmuutos", en: "Climate change", level: "B1" },
+            // General Abstract Verbs/Nouns
+            { fi: "Ajatella", en: "To think", level: "B1" },
+            { fi: "Uskoa", en: "To believe", level: "B1" },
+            { fi: "Toivoa", en: "To hope", level: "B1" },
+            { fi: "Suunnitella", en: "To plan", level: "B1" },
+            { fi: "Päättää", en: "To decide", level: "B1" },
+            { fi: "Onnistua", en: "To succeed", level: "B1" },
+            { fi: "Epäonnistua", en: "To fail", level: "B1" },
+            { fi: "Muistaa", en: "To remember", level: "B1" },
+            { fi: "Unohtaa", en: "To forget", level: "B1" },
+            { fi: "Ymmärtää", en: "To understand", level: "B1" },
+            { fi: "Selittää", en: "To explain", level: "B1" },
+            { fi: "Keskustella", en: "To discuss", level: "B1" },
+            { fi: "Mielipide", en: "Opinion", level: "B1" },
+            { fi: "Kokemus", en: "Experience", level: "B1" },
+            { fi: "Tilanne", en: "Situation", level: "B1" },
+            { fi: "Ongelma", en: "Problem", level: "B1" },
+            { fi: "Ratkaisu", en: "Solution", level: "B1" },
+            { fi: "Syy", en: "Reason/Cause", level: "B1" },
+            { fi: "Seuraus", en: "Consequence", level: "B1" },
+            { fi: "Mahdollisuus", en: "Opportunity/Possibility", level: "B1" },
+            { fi: "Tapa", en: "Habit/Way", level: "B1" },
+            { fi: "Perinne", en: "Tradition", level: "B1" },
+            { fi: "Kulttuuri", en: "Culture", level: "B1" },
+            { fi: "Tavallinen", en: "Ordinary", level: "B1" },
+            { fi: "Erityinen", en: "Special", level: "B1" },
+            { fi: "Erilainen", en: "Different", level: "B1" },
+            { fi: "Samanlainen", en: "Similar", level: "B1" },
+            { fi: "Hyödyllinen", en: "Useful", level: "B1" },
+            { fi: "Turha", en: "Useless", level: "B1" },
+            { fi: "Vaarallinen", en: "Dangerous", level: "B1" },
+            { fi: "Turvallinen", en: "Safe", level: "B1" },
+            { fi: "Ilmainen", en: "Free (no cost)", level: "B1" },
+            { fi: "Varattu", en: "Reserved/Busy", level: "B1" },
+            { fi: "Vapaa", en: "Free/Vacant", level: "B1" },
+            { fi: "Julkinen", en: "Public", level: "B1" },
+            { fi: "Yksityinen", en: "Private", level: "B1" },
+
+            // =====================
+            // LEVEL B2 (Advanced)
+            // =====================
+            // Crime & Law
+            { fi: "Rikos", en: "Crime", level: "B2" },
+            { fi: "Varkaus", en: "Theft", level: "B2" },
+            { fi: "Ryöstö", en: "Robbery", level: "B2" },
+            { fi: "Pahoinpitely", en: "Assault", level: "B2" },
+            { fi: "Tappo", en: "Manslaughter", level: "B2" },
+            { fi: "Murha", en: "Murder", level: "B2" },
+            { fi: "Petos", en: "Fraud", level: "B2" },
+            { fi: "Huijaus", en: "Scam", level: "B2" },
+            { fi: "Väärennös", en: "Forgery", level: "B2" },
+            { fi: "Salakuljetus", en: "Smuggling", level: "B2" },
+            { fi: "Huumausaine", en: "Narcotic/Drug", level: "B2" },
+            { fi: "Rattijuopumus", en: "Drunk driving", level: "B2" },
+            { fi: "Ylinopeus", en: "Speeding", level: "B2" },
+            { fi: "Sakko", en: "Fine", level: "B2" },
+            { fi: "Vankeus", en: "Imprisonment", level: "B2" },
+            { fi: "Tuomio", en: "Sentence/Judgment", level: "B2" },
+            { fi: "Oikeudenkäynti", en: "Trial", level: "B2" },
+            { fi: "Asianajaja", en: "Lawyer/Attorney", level: "B2" },
+            { fi: "Syyttäjä", en: "Prosecutor", level: "B2" },
+            { fi: "Todistaja", en: "Witness", level: "B2" },
+            { fi: "Uhri", en: "Victim", level: "B2" },
+            { fi: "Epäilty", en: "Suspect", level: "B2" },
+            { fi: "Pidättää", en: "To arrest", level: "B2" },
+            { fi: "Vangita", en: "To imprison", level: "B2" },
+            { fi: "Kuulustella", en: "To interrogate", level: "B2" },
+            { fi: "Ilkivalta", en: "Vandalism", level: "B2" },
+            { fi: "Tuhopoltto", en: "Arson", level: "B2" },
+            { fi: "Liikenteen vaarantaminen", en: "Endangering traffic", level: "B2" },
+            { fi: "Hallussapito", en: "Possession", level: "B2" },
+            { fi: "Ehdonalainen", en: "Probation/Parole", level: "B2" },
+            { fi: "Korvaus", en: "Compensation", level: "B2" },
+            { fi: "Vakuutus", en: "Insurance", level: "B2" },
+            // Accidents & Emergencies
+            { fi: "Onnettomuus", en: "Accident", level: "B2" },
+            { fi: "Kolari", en: "Crash/Collision", level: "B2" },
+            { fi: "Tulipalo", en: "Fire", level: "B2" },
+            { fi: "Tulva", en: "Flood", level: "B2" },
+            { fi: "Myrsky", en: "Storm", level: "B2" },
+            { fi: "Vahinko", en: "Damage", level: "B2" },
+            { fi: "Loukkaantua", en: "To get injured", level: "B2" },
+            { fi: "Menehtyä", en: "To perish/die", level: "B2" },
+            { fi: "Pelastua", en: "To be saved/survive", level: "B2" },
+            { fi: "Hälyttää", en: "To alert", level: "B2" },
+            { fi: "Ensiapu", en: "First aid", level: "B2" },
+            { fi: "Pelastuslaitos", en: "Rescue department", level: "B2" },
+            { fi: "Ambulanssi", en: "Ambulance", level: "B2" },
+            { fi: "Palokunta", en: "Fire brigade", level: "B2" },
+            { fi: "Hätäkeskus", en: "Emergency response centre", level: "B2" },
+            { fi: "Evakuoida", en: "To evacuate", level: "B2" },
+            // Mental Health & Social Issues
+            { fi: "Mielenterveys", en: "Mental health", level: "B2" },
+            { fi: "Masennus", en: "Depression", level: "B2" },
+            { fi: "Ahdistus", en: "Anxiety", level: "B2" },
+            { fi: "Paniikkihäiriö", en: "Panic disorder", level: "B2" },
+            { fi: "Terapia", en: "Therapy", level: "B2" },
+            { fi: "Lääkitys", en: "Medication", level: "B2" },
+            { fi: "Kuntoutus", en: "Rehabilitation", level: "B2" },
+            { fi: "Uupumus", en: "Exhaustion/Burnout", level: "B2" },
+            { fi: "Stressi", en: "Stress", level: "B2" },
+            { fi: "Kriisi", en: "Crisis", level: "B2" },
+            { fi: "Trauma", en: "Trauma", level: "B2" },
+            { fi: "Selviytyä", en: "To survive/cope", level: "B2" },
+            { fi: "Toipua", en: "To recover", level: "B2" },
+            { fi: "Tuki", en: "Support", level: "B2" },
+            { fi: "Ennaltaehkäisy", en: "Prevention", level: "B2" },
+            { fi: "Syrjäytyminen", en: "Social exclusion", level: "B2" },
+            { fi: "Yksinäisyys", en: "Loneliness", level: "B2" },
+            { fi: "Kiusaaminen", en: "Bullying", level: "B2" },
+            { fi: "Väkivalta", en: "Violence", level: "B2" },
+            { fi: "Päihde", en: "Intoxicant/Substance", level: "B2" },
+            { fi: "Riippuvuus", en: "Addiction", level: "B2" },
+            { fi: "Itsetunto", en: "Self-esteem", level: "B2" },
+            { fi: "Identiteetti", en: "Identity", level: "B2" },
+            { fi: "Syyllisyys", en: "Guilt", level: "B2" },
+            { fi: "Katkeruus", en: "Bitterness", level: "B2" },
+            { fi: "Epäoikeudenmukaisuus", en: "Injustice", level: "B2" },
+            // Politics & Society
+            { fi: "Yhteiskunta", en: "Society", level: "B2" },
+            { fi: "Demokratia", en: "Democracy", level: "B2" },
+            { fi: "Tasa-arvo", en: "Equality", level: "B2" },
+            { fi: "Oikeudenmukaisuus", en: "Justice", level: "B2" },
+            { fi: "Köyhyys", en: "Poverty", level: "B2" },
+            { fi: "Työttömyys", en: "Unemployment", level: "B2" },
+            { fi: "Maahanmuutto", en: "Immigration", level: "B2" },
+            { fi: "Kotoutuminen", en: "Integration", level: "B2" },
+            { fi: "Monikulttuurisuus", en: "Multiculturalism", level: "B2" },
+            { fi: "Asenne", en: "Attitude", level: "B2" },
+            { fi: "Ennakkoluulo", en: "Prejudice", level: "B2" },
+            { fi: "Rasismi", en: "Racism", level: "B2" },
+            { fi: "Syrjintä", en: "Discrimination", level: "B2" },
+            { fi: "Suvaitsevaisuus", en: "Tolerance", level: "B2" },
+            { fi: "Vaalit", en: "Elections", level: "B2" },
+            { fi: "Äänestää", en: "To vote", level: "B2" },
+            { fi: "Puolue", en: "Political party", level: "B2" },
+            { fi: "Eduskunta", en: "Parliament", level: "B2" },
+            { fi: "Hallitus", en: "Government", level: "B2" },
+            { fi: "Presidentti", en: "President", level: "B2" },
+            { fi: "Ministeri", en: "Minister", level: "B2" },
+            { fi: "Kansalainen", en: "Citizen", level: "B2" },
+            { fi: "Valtio", en: "State", level: "B2" },
+            { fi: "Kunta", en: "Municipality", level: "B2" },
+            { fi: "Palvelu", en: "Service", level: "B2" },
+            { fi: "Verotus", en: "Taxation", level: "B2" },
+            { fi: "Talous", en: "Economy", level: "B2" },
+            { fi: "Budjetti", en: "Budget", level: "B2" },
+            { fi: "Lama", en: "Depression (economic)", level: "B2" },
+            { fi: "Inflaatio", en: "Inflation", level: "B2" },
+            { fi: "Sijoitus", en: "Investment", level: "B2" },
+            { fi: "Ammattiliitto", en: "Trade union", level: "B2" },
+            { fi: "Lakko", en: "Strike", level: "B2" },
+            { fi: "Sopimus", en: "Contract/Agreement", level: "B2" },
+            { fi: "Neuvottelu", en: "Negotiation", level: "B2" },
+            // Abstract & Academic
+            { fi: "Analysoida", en: "To analyze", level: "B2" },
+            { fi: "Kritisoida", en: "To criticize", level: "B2" },
+            { fi: "Arvioida", en: "To evaluate", level: "B2" },
+            { fi: "Tulkita", en: "To interpret", level: "B2" },
+            { fi: "Päätellä", en: "To conclude/deduce", level: "B2" },
+            { fi: "Verrata", en: "To compare", level: "B2" },
+            { fi: "Määritellä", en: "To define", level: "B2" },
+            { fi: "Perustella", en: "To justify/argue", level: "B2" },
+            { fi: "Vaikuttaa", en: "To influence/affect", level: "B2" },
+            { fi: "Osallistua", en: "To participate", level: "B2" },
+            { fi: "Kehittyä", en: "To develop", level: "B2" },
+            { fi: "Tutkimus", en: "Research", level: "B2" },
+            { fi: "Tiede", en: "Science", level: "B2" },
+            { fi: "Taide", en: "Art", level: "B2" },
+            { fi: "Filosofia", en: "Philosophy", level: "B2" },
+            { fi: "Etiikka", en: "Ethics", level: "B2" },
+            { fi: "Moraali", en: "Morality", level: "B2" },
+            { fi: "Teoria", en: "Theory", level: "B2" },
+            { fi: "Käytäntö", en: "Practice", level: "B2" },
+            { fi: "Menetelmä", en: "Method", level: "B2" },
+            { fi: "Tulos", en: "Result", level: "B2" },
+            { fi: "Johtopäätös", en: "Conclusion", level: "B2" },
+            { fi: "Lähde", en: "Source", level: "B2" },
+            { fi: "Viite", en: "Reference", level: "B2" },
+            { fi: "Aineisto", en: "Material/Data", level: "B2" },
+            { fi: "Haaste", en: "Challenge", level: "B2" },
+            { fi: "Ratkaisu", en: "Solution", level: "B2" },
+            { fi: "Tavoite", en: "Goal/Objective", level: "B2" },
+            { fi: "Strategia", en: "Strategy", level: "B2" },
+            { fi: "Resurssi", en: "Resource", level: "B2" },
+            { fi: "Potentiaali", en: "Potential", level: "B2" },
+            { fi: "Innovaatio", en: "Innovation", level: "B2" },
+            { fi: "Luovuus", en: "Creativity", level: "B2" },
+            { fi: "Tehokkuus", en: "Efficiency", level: "B2" },
+            { fi: "Laatu", en: "Quality", level: "B2" },
+            { fi: "Määrä", en: "Quantity", level: "B2" },
+            { fi: "Keskimääräinen", en: "Average", level: "B2" },
+            { fi: "Merkittävä", en: "Significant", level: "B2" },
+            { fi: "Olennainen", en: "Essential", level: "B2" },
+            { fi: "Monimutkainen", en: "Complex", level: "B2" },
+            { fi: "Yksinkertainen", en: "Simple", level: "B2" },
+            { fi: "Välttämätön", en: "Necessary", level: "B2" },
+            { fi: "Mahdoton", en: "Impossible", level: "B2" },
+            { fi: "Todennäköinen", en: "Probable", level: "B2" },
+            { fi: "Epävarma", en: "Uncertain", level: "B2" },
+            // Idioms & Complex Verbs (from text context)
+            { fi: "Kyseenalaistaa", en: "To question/challenge", level: "B2" },
+            { fi: "Vuorovaikutus", en: "Interaction", level: "B2" },
+            { fi: "Säännönmukaisuus", en: "Regularity", level: "B2" },
+            { fi: "Heittäytyä", en: "To throw oneself into", level: "B2" },
+            { fi: "Sietää", en: "To tolerate/endure", level: "B2" },
+            { fi: "Hakeutua", en: "To seek out/apply", level: "B2" },
+            { fi: "Tiedostaa", en: "To be aware of", level: "B2" },
+            { fi: "Edellyttää", en: "To require/presuppose", level: "B2" },
+            { fi: "Keskittyä", en: "To concentrate", level: "B2" },
+            { fi: "Perehtyä", en: "To familiarize oneself", level: "B2" },
+            { fi: "Poiketa", en: "To stop by/deviate", level: "B2" },
+            { fi: "Arvostella", en: "To criticize/review", level: "B2" },
+            { fi: "Törmätä", en: "To collide/bump into", level: "B2" },
+            { fi: "Keskeyttää", en: "To interrupt", level: "B2" },
+            { fi: "Haaveilla", en: "To dream (daydream)", level: "B2" },
+            { fi: "Kaivata", en: "To miss/long for", level: "B2" },
+            { fi: "Vaikuttaa", en: "To seem/influence", level: "B2" },
+            { fi: "Kuvailla", en: "To describe", level: "B2" },
+            { fi: "Johdos", en: "Derivative", level: "B2" },
+            { fi: "Kantasana", en: "Root word", level: "B2" },
+            { fi: "Rakenne", en: "Structure", level: "B2" },
+            { fi: "Merkitys", en: "Meaning", level: "B2" },
+            { fi: "Asiayhteys", en: "Context", level: "B2" },
+            { fi: "Käsite", en: "Concept", level: "B2" },
+            { fi: "Ilmiö", en: "Phenomenon", level: "B2" }
+        ];
+
+        const GameApp = () => {
+            const [gameState, setGameState] = useState('menu'); // menu, mode_select, playing, gameover
+            const [currentLevel, setCurrentLevel] = useState('all');
+            const [gameMode, setGameMode] = useState('classic'); // classic, survival, time_attack
+            const [score, setScore] = useState(0);
+            const [streak, setStreak] = useState(0);
+            const [bestStreak, setBestStreak] = useState(0);
+            const [questionCount, setQuestionCount] = useState(0);
+            const [currentQuestion, setCurrentQuestion] = useState(null);
+            const [feedback, setFeedback] = useState(null); // null, correct, incorrect
+            const [pool, setPool] = useState([]);
+            const [timeLeft, setTimeLeft] = useState(60); // For time attack
+
+            // Timer for Time Attack Mode
+            useEffect(() => {
+                let interval = null;
+                if (gameState === 'playing' && gameMode === 'time_attack' && timeLeft > 0) {
+                    interval = setInterval(() => {
+                        setTimeLeft((prev) => {
+                            if (prev <= 1) {
+                                setGameState('gameover');
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [gameState, gameMode, timeLeft]);
+
+            // Helper to transition to next question
+            const nextTurn = (currentPool, nextCount) => {
+                if (gameMode === 'classic' && (currentPool.length === 0 || nextCount >= 10)) {
+                    setGameState('gameover');
+                    return;
+                }
+                if (gameMode !== 'classic' && currentPool.length === 0) {
+                     // Recycle vocabulary if pool runs out in infinite modes
+                     const filtered = currentLevel === 'all' 
+                        ? vocabularyDatabase 
+                        : vocabularyDatabase.filter(w => w.level === currentLevel);
+                     currentPool = [...filtered].sort(() => Math.random() - 0.5);
+                }
+
+                const correctWord = currentPool[0];
+                const remainingPool = currentPool.slice(1);
+                
+                // Generate distractors
+                const allDistractors = vocabularyDatabase
+                    .filter(w => w.en !== correctWord.en)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 3);
+                
+                const options = [...allDistractors, correctWord].sort(() => Math.random() - 0.5);
+
+                // Update State
+                setPool(remainingPool);
+                setCurrentQuestion({
+                    word: correctWord,
+                    options: options
+                });
+                setQuestionCount(nextCount);
+                setFeedback(null);
+            };
+
+            // Init Game Setup
+            const selectLevel = (level) => {
+                setCurrentLevel(level);
+                setGameState('mode_select');
+            };
+
+            // Start Game Logic
+            const startGame = (mode) => {
+                setGameMode(mode);
+                const filtered = currentLevel === 'all' 
+                    ? vocabularyDatabase 
+                    : vocabularyDatabase.filter(w => w.level === currentLevel);
+                
+                const newPool = [...filtered].sort(() => Math.random() - 0.5);
+                
+                setScore(0);
+                setStreak(0);
+                setBestStreak(0);
+                setTimeLeft(60);
+                setGameState('playing');
+                
+                // Start first turn immediately
+                nextTurn(newPool, 0);
+            };
+
+            const handleAnswer = (selectedOption) => {
+                const isCorrect = selectedOption.en === currentQuestion.word.en;
+
+                if (isCorrect) {
+                    setScore(s => s + 1);
+                    const newStreak = streak + 1;
+                    setStreak(newStreak);
+                    if (newStreak > bestStreak) setBestStreak(newStreak);
+                    setFeedback('correct');
+
+                    // Time Attack Bonus
+                    if (gameMode === 'time_attack') {
+                        setTimeLeft(t => t + 2);
+                    }
+
+                } else {
+                    setStreak(0);
+                    setFeedback('incorrect');
+
+                    // Survival Mode End
+                    if (gameMode === 'survival') {
+                        setTimeout(() => {
+                            setGameState('gameover');
+                        }, 1500);
+                        return;
+                    }
+                    
+                    // Time Attack Penalty
+                    if(gameMode === 'time_attack') {
+                        setTimeLeft(t => Math.max(0, t - 5));
+                    }
+                }
+                
+                setTimeout(() => {
+                    nextTurn(pool, questionCount + 1);
+                }, 1500);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-green-50 to-blue-50">
+                    <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+                        
+                        {/* Header */}
+                        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white text-center shadow-md relative">
+                            <h1 className="text-3xl font-bold tracking-tight">Sanakiitäjä</h1>
+                            <p className="opacity-90 text-sm font-light">Vocabulary Master</p>
+                            {gameState === 'playing' && (
+                                <div className="absolute top-4 right-4 flex items-center space-x-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                                    <span className="text-xl">🔥</span>
+                                    <span className="font-bold">{streak}</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Main Menu - Level Select */}
+                        {gameState === 'menu' && (
+                            <div className="p-8 space-y-4 card-bounce">
+                                <h2 className="text-center text-xl font-bold text-gray-700 mb-6">Valitse taso (Choose level)</h2>
+                                <button onClick={() => selectLevel('A1-A2')} className="w-full py-4 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-xl font-semibold transition border border-blue-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2">
+                                    <span>🌱</span><span>Level A1-A2 (Basic)</span>
+                                </button>
+                                <button onClick={() => selectLevel('B1')} className="w-full py-4 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded-xl font-semibold transition border border-yellow-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2">
+                                    <span>🌿</span><span>Level B1 (Intermediate)</span>
+                                </button>
+                                <button onClick={() => selectLevel('B2')} className="w-full py-4 bg-red-50 hover:bg-red-100 text-red-800 rounded-xl font-semibold transition border border-red-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2">
+                                    <span>🌳</span><span>Level B2 (Advanced)</span>
+                                </button>
+                                <button onClick={() => selectLevel('all')} className="w-full py-4 bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-xl font-semibold transition border border-gray-200 shadow-sm hover:shadow-md flex items-center justify-center space-x-2">
+                                    <span>🌍</span><span>All Levels (Mix)</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Mode Selection */}
+                        {gameState === 'mode_select' && (
+                            <div className="p-8 space-y-4 card-bounce">
+                                <div className="flex justify-between items-center mb-4">
+                                    <button onClick={() => setGameState('menu')} className="text-gray-400 hover:text-gray-600 text-sm">← Back</button>
+                                    <h2 className="text-center text-xl font-bold text-gray-700">Valitse pelimuoto</h2>
+                                    <div className="w-8"></div>
+                                </div>
+                                
+                                <button onClick={() => startGame('classic')} className="w-full p-4 bg-white hover:bg-gray-50 text-left rounded-xl border-2 border-gray-100 hover:border-green-500 transition group shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-gray-800 group-hover:text-green-600">Classic Quiz</h3>
+                                            <p className="text-sm text-gray-500">10 questions. No stress.</p>
+                                        </div>
+                                        <span className="text-2xl">📝</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => startGame('survival')} className="w-full p-4 bg-white hover:bg-gray-50 text-left rounded-xl border-2 border-gray-100 hover:border-red-500 transition group shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-gray-800 group-hover:text-red-600">Survival Mode</h3>
+                                            <p className="text-sm text-gray-500">One mistake and it's over!</p>
+                                        </div>
+                                        <span className="text-2xl">❤️‍🔥</span>
+                                    </div>
+                                </button>
+
+                                <button onClick={() => startGame('time_attack')} className="w-full p-4 bg-white hover:bg-gray-50 text-left rounded-xl border-2 border-gray-100 hover:border-purple-500 transition group shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-gray-800 group-hover:text-purple-600">Time Attack</h3>
+                                            <p className="text-sm text-gray-500">60 seconds. Race the clock!</p>
+                                        </div>
+                                        <span className="text-2xl">⏱️</span>
+                                    </div>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Gameplay */}
+                        {gameState === 'playing' && currentQuestion && (
+                            <div className="p-6 relative">
+                                {/* Progress / Timer Bar */}
+                                {gameMode === 'time_attack' ? (
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                                        <div 
+                                            className={`h-2.5 rounded-full transition-all duration-1000 ${timeLeft < 10 ? 'bg-red-500' : 'bg-purple-600'}`} 
+                                            style={{ width: `${(timeLeft / 60) * 100}%` }}
+                                        ></div>
+                                        <p className="text-center text-xs text-gray-500 mt-1">{timeLeft}s remaining</p>
+                                    </div>
+                                ) : (
+                                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                                        <div 
+                                            className="bg-green-500 h-2.5 rounded-full progress-bar-transition" 
+                                            style={{ width: `${(questionCount / (gameMode === 'classic' ? 10 : (questionCount + 10))) * 100}%` }}
+                                        ></div>
+                                         {gameMode === 'classic' && <p className="text-center text-xs text-gray-500 mt-1">{questionCount + 1} / 10</p>}
+                                    </div>
+                                )}
+
+                                <div className="text-center mb-8 mt-4">
+                                    <span className={`inline-block px-3 py-1 text-xs rounded-full mb-2 font-bold
+                                        ${currentQuestion.word.level === 'B2' ? 'bg-red-100 text-red-800' : 
+                                          currentQuestion.word.level === 'B1' ? 'bg-yellow-100 text-yellow-800' : 
+                                          'bg-blue-100 text-blue-800'}`}>
+                                        {currentQuestion.word.level}
+                                    </span>
+                                    <h2 className="text-4xl font-black text-gray-800 mb-2 tracking-wide">
+                                        {currentQuestion.word.fi}
+                                    </h2>
+                                    <p className="text-gray-400 text-sm font-medium">Mitä tämä on englanniksi?</p>
+                                </div>
+
+                                <div className="space-y-3">
+                                    {currentQuestion.options.map((opt, idx) => {
+                                        let btnClass = "w-full p-4 text-left rounded-xl border-2 transition-all font-bold transform active:scale-95 ";
+                                        
+                                        if (feedback) {
+                                            if (opt.en === currentQuestion.word.en) {
+                                                btnClass += "bg-green-500 border-green-500 text-white shadow-lg scale-105";
+                                            } else if (feedback === 'incorrect') {
+                                                btnClass += "bg-gray-100 border-gray-200 text-gray-400 opacity-50";
+                                            } else {
+                                                btnClass += "bg-white border-gray-200 text-gray-400 opacity-50";
+                                            }
+                                        } else {
+                                            btnClass += "bg-white border-gray-100 text-gray-600 hover:border-green-400 hover:bg-green-50 hover:text-green-700 hover:shadow-md";
+                                        }
+
+                                        return (
+                                            <button 
+                                                key={idx} 
+                                                onClick={() => !feedback && handleAnswer(opt)}
+                                                className={btnClass}
+                                                disabled={!!feedback}
+                                            >
+                                                {opt.en}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {feedback && (
+                                    <div className={`absolute inset-0 flex items-center justify-center pointer-events-none`}>
+                                        <div className={`text-6xl card-bounce drop-shadow-xl ${feedback === 'correct' ? 'opacity-100' : 'opacity-100'}`}>
+                                            {feedback === 'correct' ? '✨' : '❌'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Game Over */}
+                        {gameState === 'gameover' && (
+                            <div className="p-8 text-center card-bounce">
+                                <div className="text-7xl mb-6">
+                                    {score >= (gameMode === 'classic' ? 8 : 15) ? '🏆' : 
+                                     score >= (gameMode === 'classic' ? 5 : 5) ? '👏' : '📚'}
+                                </div>
+                                <h2 className="text-3xl font-bold text-gray-800 mb-2">Peli loppui!</h2>
+                                
+                                <div className="bg-gray-50 rounded-xl p-6 mb-8 space-y-3">
+                                    <div className="flex justify-between items-center border-b border-gray-200 pb-2">
+                                        <span className="text-gray-500">Score</span>
+                                        <span className="text-2xl font-bold text-green-600">{score}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500">Best Streak</span>
+                                        <span className="text-xl font-bold text-orange-500">{bestStreak} 🔥</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3">
+                                    <button onClick={() => startGame(gameMode)} className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg transform hover:-translate-y-1">
+                                        Pelaa uudestaan (Play Again)
+                                    </button>
+                                    <button onClick={() => setGameState('menu')} className="w-full py-3 bg-white hover:bg-gray-50 text-gray-600 rounded-xl font-semibold transition border border-gray-200">
+                                        Päävalikko (Main Menu)
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                    <div className="fixed bottom-4 text-center w-full text-gray-400 text-xs pointer-events-none">
+                         Built with React & Tailwind
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<GameApp />);
+    </script>
+</body>
+</html>
